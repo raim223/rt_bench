@@ -1,0 +1,1 @@
+find ./results -name "*.dat" -type f -delete
