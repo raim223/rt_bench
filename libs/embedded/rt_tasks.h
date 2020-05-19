@@ -22,6 +22,7 @@
 	#define TM_NOW TMR_NOW
 	#define rt_timer_read pt_timer_read
 	#define rt_timer_spin pt_timer_spin
+	#define rt_timer_ns2ticks pt_timer_ns2ticks
 #endif
 /*****************************************************************************/
 /* Real-time Task */
