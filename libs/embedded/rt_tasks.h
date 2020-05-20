@@ -1,5 +1,5 @@
-#ifndef _XENO_TASK_H_
-#define _XENO_TASK_H_
+#ifndef _RT_TASK_H_
+#define _RT_TASK_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +15,7 @@
 	#include <alchemy/timer.h> //native -> alchemy
 	#define printf rt_printf
 #else
-	#include "rt_posix.h"
+	#include "rt_posix_task.h"
 	#define RT_TASK PT_TASK
 	#define SRTIME PRTIME
 	#define RTIME PRTIME
@@ -33,4 +33,4 @@ int start_rt_task(int enable, RT_TASK *task, void (*fun)(void *cookie));
 void wait_rt_period(RT_TASK *task);
 void delete_rt_task(void);
 void print_xeno_skin(void);
-#endif // _XENO_TASK_H_
+#endif //_RT_TASK_H_

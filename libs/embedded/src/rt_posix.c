@@ -172,8 +172,7 @@ PRTIME pt_timer_read(void){
 		}
 	else
 	{
-		ret = (PRTIME)(TIMESPEC2NS(probe));
-		return ret;
+		return (TIMESPEC2NS(probe));
 	}
 }
 /*****************************************************************************/

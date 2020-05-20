@@ -20,8 +20,10 @@ LDFLAGS	 = -lm -lrt -lpthread $(LIB_XENO)
 
 SOURCES	+= main.c 			
 SOURCES	+= $(INC_EMBD)/src/rt_tasks.c
+SOURCES	+= $(INC_EMBD)/src/rt_itc.c
 ifneq ($(RT_DOMAIN),xenomai)
-SOURCES	+= $(INC_EMBD)/src/rt_posix.c
+SOURCES	+= $(INC_EMBD)/src/rt_posix_task.c
+SOURCES	+= $(INC_EMBD)/src/rt_posix_mutex.c
 endif
 
 OBJ_DIR = obj

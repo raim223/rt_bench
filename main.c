@@ -29,6 +29,7 @@
 /* RT_TASKS */
 /*****************************************************************************/
 #include <rt_tasks.h>
+#include <rt_itc.h> // for mutex
 
 /* comment out to run periodicity test */
 #define _PREEMPTION_TEST_
@@ -80,7 +81,7 @@ char *sTaskName3 = "task_3";
 
 /* task duration should be in seconds and an integer. 
  * we can define as a constant, but we need a variable in future releases */
-int test_duration = 3600;  //1 hour
+int test_duration = 10;  //1 hour
 
 /* end the whole process when the buffer of TASK_1 is full */
 #define FULL_BUF (int)(SEC_TO_BUF(test_duration, TASK_1_PRD)) 
@@ -106,6 +107,10 @@ int iBufCnt3 = 0;
 #endif
 
 FLAG bQuitFlag = off;
+
+/* mutex */
+RT_MUTEX lock;
+
 /*****************************************************************************/
 /* function macros */
 /*****************************************************************************/
@@ -132,8 +137,10 @@ void TestTask1(void *arg){
 		/* spin the CPU doing nothing until target execution time is reached */
 		task_runtime = 0;
 		while(task_runtime < TaskExeTime){
+			acquire_rt_mutex(&lock);
 			rt_timer_spin(TaskSpinTime);
 			task_runtime += TaskSpinTime;
+			release_rt_mutex(&lock);
 			// rt_printf("1\n");
 		}
 		rtmResp = rt_timer_read();
@@ -187,8 +194,10 @@ void TestTask2(void *arg){
 		
 		task_runtime = 0;
 		while(task_runtime < TaskExeTime){
+			acquire_rt_mutex(&lock);
 			rt_timer_spin(TaskSpinTime);
 			task_runtime += TaskSpinTime;
+			release_rt_mutex(&lock);
 			// rt_printf("2\n");
 		}
 		rtmResp = rt_timer_read(); // end of execution 
@@ -236,8 +245,10 @@ void TestTask3(void *arg){
 		
 		task_runtime = 0;
 		while(task_runtime < TaskExeTime){
+			acquire_rt_mutex(&lock);
 			rt_timer_spin(TaskSpinTime);
 			task_runtime += TaskSpinTime;
+			release_rt_mutex(&lock);
 			// rt_printf("3\n");
 		}
 		
@@ -275,6 +286,13 @@ int main(int argc, char **argv){
 	signal(SIGTERM, SignalHandler);
 	signal(SIGINT, SignalHandler);
 
+	/* init mutex */
+	if (create_rt_mutex(&lock, NULL) != 0)
+    {
+        printf("\n mutex init failed\n");
+        return 1;
+    }
+
 	/* RT-tasks */
 	mlockall(MCL_CURRENT|MCL_FUTURE); 
 	XenoInit();
@@ -290,6 +308,7 @@ int main(int argc, char **argv){
 #ifdef _PREEMPTION_TEST_
 	FilePrintEval(sTaskName3,BufPrd3,BufResp3,BufJtr3,iBufCnt3);
 #endif
+	delete_rt_mutex(&lock);
 	return 0;
 }
 /****************************************************************************/
