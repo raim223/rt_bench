@@ -61,7 +61,7 @@ int create_rt_task(RT_TASK *task, char *name, int prio) {
 }
 /*****************************************************************************/
 int set_rt_task_period(RT_TASK *task, RTIME period) {
-	return _set_rt_task_period(task, rt_timer_ns2ticks(period));
+	return _set_rt_task_period(task, (period));
 }
 /*****************************************************************************/
 void wait_rt_period(RT_TASK *task)

@@ -18,6 +18,7 @@ int pt_task_create(PT_TASK* task, char* name, int stksize, int prio, PT_MODE mod
 	task->name = name;
 	task->mode = mode;
 	task->s_mode = _mode_name(task->mode);
+	cpu_set_t cpus;
 
 	int err = pthread_attr_init(&task->thread_attributes);
 	if (err)
@@ -59,6 +60,15 @@ int pt_task_create(PT_TASK* task, char* name, int stksize, int prio, PT_MODE mod
 			return -ESETPRIO;
 		}
 		task->prio = prio;
+
+		CPU_ZERO(&cpus);
+		CPU_SET(0, &cpus);
+		err = pthread_attr_setaffinity_np(&task->thread_attributes, sizeof(cpu_set_t), &cpus);
+		if (err)
+		{
+			TASK_DBG(task->s_mode,"set cpu affinity failed for thread '%s' with err=%d\n", task->name, err);
+			return -ESETPRIO;
+		}
 	}
 
 	if (stksize == 0)
@@ -80,7 +90,6 @@ int pt_task_create(PT_TASK* task, char* name, int stksize, int prio, PT_MODE mod
 int pt_task_set_periodic(PT_TASK* task,PRTIME idate, PRTIME period)
 {
 	
-	task->fd_timer = -1; 
 	/* calc start time of the periodic thread */
 	struct timespec start_time;
 	if (idate == TMR_NOW){
@@ -92,29 +101,10 @@ int pt_task_set_periodic(PT_TASK* task,PRTIME idate, PRTIME period)
 	} else
 		start_time = NS2TIMESPEC(idate);
 
-
 	/* Start one second later from now. */
 	start_time.tv_sec += START_DELAY_SECS;
 	
-	/* if a timerfd is used to make thread periodic (Linux / Xenomai 3),
-	 * initialize it before launching thread (timer is read in the loop)
-	*/
-	struct itimerspec period_timer_conf;
-	task->fd_timer = timerfd_create(CLOCK_TO_USE, 0);
-	if ( task->fd_timer ==-1 )
-	{
-		TASK_DBG(task->s_mode,"Failed to create timerfd for thread '%s'\n", task->name);
-		return -ETMRFD;
-	}
-	period_timer_conf.it_value = start_time;
-	period_timer_conf.it_interval.tv_sec = period/NANOSEC_PER_SEC;
-	period_timer_conf.it_interval.tv_nsec = (period%NANOSEC_PER_SEC) ;
-
-	if ( timerfd_settime(task->fd_timer, TFD_TIMER_ABSTIME, &period_timer_conf, NULL) )
-	{
-		TASK_DBG(task->s_mode,"Failed to set periodic tor thread '%s' with errno=%d\n", task->name, errno);
-		return -ESETPRD;
-	}
+	task->deadline = start_time;
 	task->period = period;
 	task->overruns = 0;
 	return 0;
@@ -147,18 +137,25 @@ int pt_task_start(PT_TASK* task,void (*entry)(void *arg), void * arg)
 void pt_task_wait_period(PT_TASK *task)
 {
 	int err = 0;
-	uint64_t ticks;
+	struct timespec now;
 	
-	err = read(task->fd_timer, &ticks, sizeof(ticks));
-	if ( err<0 )
+
+	err =clock_nanosleep(CLOCK_TO_USE,TIMER_ABSTIME,&task->deadline,NULL);
+	if ( err>0 )
 	{
-		TASK_DBG(task->name,"TimerFd wait period failed with errno=%d\n", errno);
+		TASK_DBG(task->name,"Timer wait period failed with errno=%d\n", errno);
 	}
-	if ( ticks>1 )
-	{
-		task->overruns += ticks;
-//		TASK_DBG(task->name,"TimerFd wait period missed for thread: overruns=%lu\n", (long unsigned int)ticks);
-	}
+	
+	task->deadline.tv_nsec += task->period;
+	task->deadline.tv_sec += task->deadline.tv_nsec / NANOSEC_PER_SEC;
+	task->deadline.tv_nsec %= NANOSEC_PER_SEC;
+
+	now =  NS2TIMESPEC(pt_timer_read());
+ 	if (now.tv_sec > task->deadline.tv_sec || (now.tv_sec == task->deadline.tv_sec && task->deadline.tv_nsec > now.tv_nsec))
+ 	{
+ 		task->overruns += 1;
+		// TASK_DBG(task->name,"Timer wait period missed");
+ 	}
 
 }
 /*****************************************************************************/
@@ -192,7 +189,7 @@ struct timespec NS2TIMESPEC(uint64_t nanosecs)
 
 	return ret;
 }
-int pt_timer_ns2ticks(PRTIME ticks)
+PRTIME pt_timer_ns2ticks(PRTIME ticks)
 {
 
 }

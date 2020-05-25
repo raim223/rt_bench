@@ -52,7 +52,7 @@ RT_TASK TskTest2;
 RT_TASK TskTest3;
 
 #define TASK_1_PRIO		(99) // xeno: 99 
-#define TASK_1_PRD		(10)
+#define TASK_1_PRD		(100)
 #define TASK_1_EXE		(3)
 char *sTaskName1 = "task_1";
 
@@ -81,7 +81,7 @@ char *sTaskName3 = "task_3";
 
 /* task duration should be in seconds and an integer. 
  * we can define as a constant, but we need a variable in future releases */
-int test_duration = 10;  //1 hour
+int test_duration = 100;  //1 hour
 
 /* end the whole process when the buffer of TASK_1 is full */
 #define FULL_BUF (int)(SEC_TO_BUF(test_duration, TASK_1_PRD)) 
@@ -194,10 +194,14 @@ void TestTask2(void *arg){
 		
 		task_runtime = 0;
 		while(task_runtime < TaskExeTime){
+#ifdef _PREEMPTION_TEST_
 			acquire_rt_mutex(&lock);
+#endif
 			rt_timer_spin(TaskSpinTime);
 			task_runtime += TaskSpinTime;
+#ifdef _PREEMPTION_TEST_
 			release_rt_mutex(&lock);
+#endif
 			// rt_printf("2\n");
 		}
 		rtmResp = rt_timer_read(); // end of execution 
@@ -245,10 +249,14 @@ void TestTask3(void *arg){
 		
 		task_runtime = 0;
 		while(task_runtime < TaskExeTime){
+#ifdef _PREEMPTION_TEST_
 			acquire_rt_mutex(&lock);
+#endif
 			rt_timer_spin(TaskSpinTime);
 			task_runtime += TaskSpinTime;
+#ifdef _PREEMPTION_TEST_
 			release_rt_mutex(&lock);
+#endif
 			// rt_printf("3\n");
 		}
 		

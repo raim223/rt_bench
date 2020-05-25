@@ -8,7 +8,7 @@ CFLAGS_SWITCHES = -Wall -Wno-unused-but-set-variable -Wno-unused-variable
 INC_EMBD = $(CUR_DIR)/libs/embedded
 INC_DIRS = -I$(CUR_DIR) -I$(INC_EMBD) 
 
-RT_DOMAIN ?= xenomai
+RT_DOMAIN ?= rt_preempt
 ifeq ($(RT_DOMAIN),xenomai)
 XENOMAI_PATH=/usr/xenomai
 INC_XENO = $(shell $(XENOMAI_PATH)/bin/xeno-config --skin alchemy --cflags) 

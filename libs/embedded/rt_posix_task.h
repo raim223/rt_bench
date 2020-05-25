@@ -41,9 +41,8 @@ typedef TASK_TYPE PT_MODE;
 /*****************************************************************************/
 typedef struct{
 	pthread_t thread;
-	FDTIMER fd_timer;
+	struct timespec deadline;
 	pthread_attr_t thread_attributes;
-
 	PT_MODE mode;
 	char* s_mode;
 	uint64_t overruns;
@@ -80,7 +79,7 @@ void pt_task_delete(void);
 PRTIME pt_timer_read(void);
 /*****************************************************************************/
 void pt_timer_spin(PRTIME spintime);
-int pt_timer_ns2ticks(PRTIME ticks);
+PRTIME pt_timer_ns2ticks(PRTIME ticks);
 
 #define TASK_DBG(mode,format, args...) printf("[%s Task] "format"\n", mode, ##args) 
 

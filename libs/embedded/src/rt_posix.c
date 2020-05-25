@@ -96,25 +96,23 @@ int pt_task_set_periodic(PT_TASK* task,PRTIME idate, PRTIME period)
 	/* Start one second later from now. */
 	start_time.tv_sec += START_DELAY_SECS;
 	
-	/* if a timerfd is used to make thread periodic (Linux / Xenomai 3),
-	 * initialize it before launching thread (timer is read in the loop)
-	*/
-	struct itimerspec period_timer_conf;
-	task->fd_timer = timerfd_create(CLOCK_TO_USE, 0);
-	if ( task->fd_timer ==-1 )
-	{
-		TASK_DBG(task->s_mode,"Failed to create timerfd for thread '%s'\n", task->name);
-		return -ETMRFD;
-	}
-	period_timer_conf.it_value = start_time;
-	period_timer_conf.it_interval.tv_sec = period/NANOSEC_PER_SEC;
-	period_timer_conf.it_interval.tv_nsec = (period%NANOSEC_PER_SEC) ;
+	// struct itimerspec period_timer_conf;
+	// task->fd_timer = timerfd_create(CLOCK_TO_USE, 0);
+	// if ( task->fd_timer ==-1 )
+	// {
+	// 	TASK_DBG(task->s_mode,"Failed to create timerfd for thread '%s'\n", task->name);
+	// 	return -ETMRFD;
+	// }
+	// period_timer_conf.it_value = start_time;
+	// period_timer_conf.it_interval.tv_sec = period/NANOSEC_PER_SEC;
+	// period_timer_conf.it_interval.tv_nsec = (period%NANOSEC_PER_SEC) ;
 
-	if ( timerfd_settime(task->fd_timer, TFD_TIMER_ABSTIME, &period_timer_conf, NULL) )
-	{
-		TASK_DBG(task->s_mode,"Failed to set periodic tor thread '%s' with errno=%d\n", task->name, errno);
-		return -ESETPRD;
-	}
+	// if ( timerfd_settime(task->fd_timer, TFD_TIMER_ABSTIME, &period_timer_conf, NULL) )
+	// {
+	// 	TASK_DBG(task->s_mode,"Failed to set periodic tor thread '%s' with errno=%d\n", task->name, errno);
+	// 	return -ESETPRD;
+	// }
+	task->deadline = start_time;
 	task->period = period;
 	task->overruns = 0;
 	return 0;
